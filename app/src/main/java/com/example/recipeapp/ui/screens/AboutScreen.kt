@@ -13,6 +13,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +22,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import com.yandex.mapkit.MapKitFactory
@@ -74,9 +76,40 @@ private fun AboutCompanyCard() {
 
 @Composable
 private fun OfficesCard() {
-    val officePoint = remember { Point(53.9, 27.56) }
-    val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val officePoint = remember { Point(53.9, 27.56) }
+
+    val mapView = remember {
+        MapView(context).apply {
+            mapWindow.map.move(CameraPosition(officePoint, 13f, 0f, 0f))
+            mapWindow.map.mapObjects.addPlacemark().apply {
+                geometry = officePoint
+            }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                MapKitFactory.getInstance().onStart()
+                mapView.onStart()
+            }
+            override fun onStop(owner: LifecycleOwner) {
+                mapView.onStop()
+                MapKitFactory.getInstance().onStop()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        // Если lifecycle уже в состоянии STARTED, onStart не сработает автоматически
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            MapKitFactory.getInstance().onStart()
+            mapView.onStart()
+        }
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -91,32 +124,19 @@ private fun OfficesCard() {
                 style = MaterialTheme.typography.titleMedium
             )
             AndroidView(
+                factory = {
+                    mapView.apply {
+                        // Запрещаем родительскому скроллу перехватывать касания внутри карты
+                        setOnTouchListener { v, _ ->
+                            v.parent?.requestDisallowInterceptTouchEvent(true)
+                            false
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                factory = { ctx ->
-                    MapView(ctx).also { mapView ->
-                        mapView.mapWindow.map.move(
-                            CameraPosition(officePoint, 13f, 0f, 0f)
-                        )
-                        mapView.mapWindow.map.mapObjects.addPlacemark().apply {
-                            geometry = officePoint
-                        }
-
-                        lifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
-                            override fun onStart(owner: LifecycleOwner) {
-                                MapKitFactory.getInstance().onStart()
-                                mapView.onStart()
-                            }
-
-                            override fun onStop(owner: LifecycleOwner) {
-                                mapView.onStop()
-                                MapKitFactory.getInstance().onStop()
-                            }
-                        })
-                    }
-                }
+                    .clip(RoundedCornerShape(12.dp))
             )
         }
     }
