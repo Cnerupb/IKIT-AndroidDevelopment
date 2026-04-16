@@ -19,6 +19,7 @@ fun DrawerScaffold(
     navController: NavController,
     currentRoute: String,
     title: String,
+    drawerGesturesEnabled: Boolean = true,
     floatingActionButton: @Composable () -> Unit = {},
     fabPosition: FabPosition = FabPosition.End,
     content: @Composable (PaddingValues) -> Unit
@@ -38,6 +39,7 @@ fun DrawerScaffold(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerGesturesEnabled,
         drawerContent = {
             ModalDrawerSheet {
                 Spacer(Modifier.height(16.dp))

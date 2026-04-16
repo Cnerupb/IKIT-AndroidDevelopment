@@ -49,7 +49,8 @@ fun AppNavigation() {
             DrawerScaffold(
                 navController = navController,
                 currentRoute = Routes.ABOUT,
-                title = "О нас"
+                title = "О нас",
+                drawerGesturesEnabled = false
             ) { padding ->
                 AboutScreen(navController, padding)
             }

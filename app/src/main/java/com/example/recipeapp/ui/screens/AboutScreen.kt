@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import android.view.MotionEvent
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -126,10 +127,16 @@ private fun OfficesCard() {
             AndroidView(
                 factory = {
                     mapView.apply {
-                        // Запрещаем родительскому скроллу перехватывать касания внутри карты
-                        setOnTouchListener { v, _ ->
-                            v.parent?.requestDisallowInterceptTouchEvent(true)
-                            false
+                        setOnTouchListener { v, event ->
+                            when (event.action) {
+                                MotionEvent.ACTION_DOWN,
+                                MotionEvent.ACTION_MOVE ->
+                                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                                MotionEvent.ACTION_UP,
+                                MotionEvent.ACTION_CANCEL ->
+                                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                            }
+                            false // позволяем MapView самому обработать событие
                         }
                     }
                 },
