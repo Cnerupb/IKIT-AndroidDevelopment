@@ -42,7 +42,7 @@ fun DrawerScaffold(
             ModalDrawerSheet {
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "RecipeApp",
+                    "Книга рецептов",
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.titleLarge
                 )
@@ -74,7 +74,7 @@ fun DrawerScaffold(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
+                CenterAlignedTopAppBar(
                     title = { Text(title) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
