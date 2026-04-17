@@ -52,7 +52,7 @@ fun AppNavigation() {
                 title = "О нас",
                 drawerGesturesEnabled = false
             ) { padding ->
-                AboutScreen(navController, padding)
+                AboutScreen(padding)
             }
         }
 
