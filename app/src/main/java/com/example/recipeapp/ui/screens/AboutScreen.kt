@@ -52,15 +52,12 @@ fun AboutScreen(padding: PaddingValues) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Текстовый блок прокручивается независимо.
-        // weight(1f, fill = false) даёт ему ровно столько высоты, сколько нужно
-        // контенту, но не более оставшегося места — тогда карта всегда видна снизу.
+        // fill = false: занимает не более оставшегося места, карта всегда видна снизу.
         Column(
             modifier = Modifier
                 .weight(1f, fill = false)
                 .nestedScroll(NoOverscroll)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             AboutCompanyCard()
         }
@@ -108,8 +105,9 @@ private fun OfficesCard() {
 
     val mapView = remember {
         MapView(context).apply {
-            mapWindow.map.move(CameraPosition(officePoint, 13f, 0f, 0f))
-            mapWindow.map.mapObjects.addPlacemark().apply {
+            val map = mapWindow.map
+            map.move(CameraPosition(officePoint, 13f, 0f, 0f))
+            map.mapObjects.addPlacemark().apply {
                 geometry = officePoint
             }
         }
