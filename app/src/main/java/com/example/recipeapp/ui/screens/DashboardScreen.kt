@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
@@ -58,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.recipeapp.data.Recipe
 import com.example.recipeapp.data.WeatherCondition
 import com.example.recipeapp.data.WeatherData
 import com.example.recipeapp.data.sampleRecipes
@@ -326,8 +329,7 @@ private fun RecentRecipesSection(navController: NavController) {
         ) {
             items(sampleRecipes, key = { it.id }) { recipe ->
                 RecentRecipeCard(
-                    title = recipe.name,
-                    cookingTime = recipe.cookingTimeMinutes,
+                    recipe = recipe,
                     onClick = { navController.navigate(Routes.recipeDetail(recipe.id)) }
                 )
             }
@@ -336,22 +338,47 @@ private fun RecentRecipesSection(navController: NavController) {
 }
 
 @Composable
-private fun RecentRecipeCard(title: String, cookingTime: Int, onClick: () -> Unit) {
+private fun RecentRecipeCard(recipe: Recipe, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.size(width = 150.dp, height = 100.dp),
+        modifier = Modifier.size(width = 250.dp, height = 250.dp),
         shape = RoundedCornerShape(12.dp),
         onClick = onClick
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = title, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
-            Text(
-                text = "$cookingTime мин",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(175.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Фото блюда",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Column(
+                modifier = Modifier.padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = recipe.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(Icons.Default.Schedule, null, modifier = Modifier.size(14.dp))
+                    Text(
+                        text = "${recipe.cookingTimeMinutes} мин",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
