@@ -69,9 +69,9 @@ fun EditRecipeScreen(navController: NavController, recipeViewModel: RecipeViewMo
     var imageUrl by remember(recipe) { mutableStateOf(recipe.imageUrl ?: "") }
     var cookingTime by remember(recipe) { mutableStateOf(recipe.cookingTimeMinutes.toString()) }
     var calories by remember(recipe) { mutableStateOf(recipe.calories.toString()) }
-    var proteins by remember(recipe) { mutableStateOf("%.1f".format(recipe.proteins)) }
-    var fats by remember(recipe) { mutableStateOf("%.1f".format(recipe.fats)) }
-    var carbohydrates by remember(recipe) { mutableStateOf("%.1f".format(recipe.carbohydrates)) }
+    var proteins by remember(recipe) { mutableStateOf(recipe.proteins.toString()) }
+    var fats by remember(recipe) { mutableStateOf(recipe.fats.toString()) }
+    var carbohydrates by remember(recipe) { mutableStateOf(recipe.carbohydrates.toString()) }
     val ingredients = remember(recipe) { mutableStateListOf(*recipe.ingredients.toTypedArray()) }
     val steps = remember(recipe) { mutableStateListOf(*recipe.steps.toTypedArray()) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -264,9 +264,9 @@ fun EditRecipeScreen(navController: NavController, recipeViewModel: RecipeViewMo
                         imageUrl = imageUrl.ifBlank { null },
                         cookingTimeMinutes = cookingTime.toIntOrNull() ?: 0,
                         calories = calories.toIntOrNull() ?: 0,
-                        proteins = proteins.toDoubleOrNull() ?: 0.0,
-                        fats = fats.toDoubleOrNull() ?: 0.0,
-                        carbohydrates = carbohydrates.toDoubleOrNull() ?: 0.0,
+                        proteins = proteins.replace(',', '.').toDoubleOrNull() ?: 0.0,
+                        fats = fats.replace(',', '.').toDoubleOrNull() ?: 0.0,
+                        carbohydrates = carbohydrates.replace(',', '.').toDoubleOrNull() ?: 0.0,
                         ingredients = ingredients.filter { it.isNotBlank() },
                         steps = steps.filter { it.isNotBlank() }
                     )

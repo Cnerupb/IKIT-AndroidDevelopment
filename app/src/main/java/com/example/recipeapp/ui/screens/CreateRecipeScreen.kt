@@ -212,9 +212,9 @@ fun CreateRecipeScreen(navController: NavController, recipeViewModel: RecipeView
                         imageUrl = imageUrl.ifBlank { null },
                         cookingTimeMinutes = cookingTime.toIntOrNull() ?: 0,
                         calories = calories.toIntOrNull() ?: 0,
-                        proteins = proteins.toDoubleOrNull() ?: 0.0,
-                        fats = fats.toDoubleOrNull() ?: 0.0,
-                        carbohydrates = carbohydrates.toDoubleOrNull() ?: 0.0,
+                        proteins = proteins.replace(',', '.').toDoubleOrNull() ?: 0.0,
+                        fats = fats.replace(',', '.').toDoubleOrNull() ?: 0.0,
+                        carbohydrates = carbohydrates.replace(',', '.').toDoubleOrNull() ?: 0.0,
                         ingredients = ingredients.filter { it.isNotBlank() },
                         steps = steps.filter { it.isNotBlank() }
                     )
