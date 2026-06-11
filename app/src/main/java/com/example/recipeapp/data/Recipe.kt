@@ -1,17 +1,38 @@
 package com.example.recipeapp.data
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
+@Entity(tableName = "recipes")
 data class Recipe(
-    val id: Int,
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
     val name: String,
-    val imageUrl: String,
+    val imageUrl: String? = null,
     val cookingTimeMinutes: Int,
     val calories: Int,
-    val proteins: Float,
-    val fats: Float,
-    val carbohydrates: Float,
+    val proteins: Double,
+    val fats: Double,
+    val carbohydrates: Double,
     val ingredients: List<String>,
     val steps: List<String>
 )
+
+class Converters {
+    @TypeConverter
+    fun fromStringList(value: List<String>): String {
+        return Gson().toJson(value)
+    }
+
+    @TypeConverter
+    fun toStringList(value: String): List<String> {
+        val listType = object : TypeToken<List<String>>() {}.type
+        return Gson().fromJson(value, listType)
+    }
+}
 
 val sampleRecipes = listOf(
     Recipe(
@@ -20,9 +41,9 @@ val sampleRecipes = listOf(
         imageUrl = "https://upload.wikimedia.org/wikipedia/commons/3/33/Fresh_made_pasta_carbonara.jpg",
         cookingTimeMinutes = 30,
         calories = 380,
-        proteins = 15.2f,
-        fats = 18.4f,
-        carbohydrates = 41.6f,
+        proteins = 15.0,
+        fats = 18.0,
+        carbohydrates = 42.0,
         ingredients = listOf(
             "Спагетти — 200 г",
             "Бекон — 100 г",
@@ -46,9 +67,9 @@ val sampleRecipes = listOf(
         imageUrl = "https://upload.wikimedia.org/wikipedia/commons/7/76/Greek_salad.jpg",
         cookingTimeMinutes = 15,
         calories = 160,
-        proteins = 4.8f,
-        fats = 12.1f,
-        carbohydrates = 7.9f,
+        proteins = 5.0,
+        fats = 12.0,
+        carbohydrates = 8.0,
         ingredients = listOf(
             "Помидоры — 3 шт",
             "Огурцы — 2 шт",

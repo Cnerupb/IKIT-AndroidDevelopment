@@ -39,9 +39,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.recipeapp.ui.components.EditableListItem
 
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.recipeapp.data.Recipe
+import com.example.recipeapp.ui.viewmodel.RecipeViewModel
+import kotlinx.coroutines.launch
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateRecipeScreen(navController: NavController) {
+fun CreateRecipeScreen(navController: NavController, recipeViewModel: RecipeViewModel) {
+    val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
     var imageUrl by remember { mutableStateOf("") }
     var cookingTime by remember { mutableStateOf("") }
@@ -186,7 +192,23 @@ fun CreateRecipeScreen(navController: NavController) {
             }
 
             FloatingActionButton(
-                onClick = { navController.popBackStack() },
+                onClick = {
+                    val recipe = Recipe(
+                        name = name,
+                        imageUrl = imageUrl.ifBlank { null },
+                        cookingTimeMinutes = cookingTime.toIntOrNull() ?: 0,
+                        calories = calories.toIntOrNull() ?: 0,
+                        proteins = proteins.toDoubleOrNull() ?: 0.0,
+                        fats = fats.toDoubleOrNull() ?: 0.0,
+                        carbohydrates = carbohydrates.toDoubleOrNull() ?: 0.0,
+                        ingredients = ingredients.filter { it.isNotBlank() },
+                        steps = steps.filter { it.isNotBlank() }
+                    )
+                    scope.launch {
+                        recipeViewModel.insert(recipe)
+                        navController.popBackStack()
+                    }
+                },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)

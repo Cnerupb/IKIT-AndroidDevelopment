@@ -36,10 +36,25 @@ import androidx.navigation.NavController
 import com.example.recipeapp.data.sampleRecipes
 import com.example.recipeapp.ui.navigation.Routes
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.SubcomposeAsyncImage
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material3.CircularProgressIndicator
+import com.example.recipeapp.ui.viewmodel.RecipeViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeDetailScreen(navController: NavController, recipeId: Int) {
-    val recipe = sampleRecipes.find { it.id == recipeId } ?: sampleRecipes.first()
+fun RecipeDetailScreen(navController: NavController, recipeViewModel: RecipeViewModel, recipeId: Long) {
+    val recipeState by recipeViewModel.selectedRecipe.collectAsState()
+
+    LaunchedEffect(recipeId) {
+        recipeViewModel.getRecipeById(recipeId)
+    }
+
+    val recipe = recipeState ?: return
 
     Scaffold(
         topBar = {
@@ -51,7 +66,7 @@ fun RecipeDetailScreen(navController: NavController, recipeId: Int) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(Routes.editRecipe(recipeId)) }) {
+                    IconButton(onClick = { navController.navigate(Routes.editRecipe(recipeId.toInt())) }) {
                         Icon(Icons.Default.Edit, "Редактировать")
                     }
                 }
@@ -68,20 +83,31 @@ fun RecipeDetailScreen(navController: NavController, recipeId: Int) {
         ) {
             Text(recipe.name, style = MaterialTheme.typography.headlineMedium)
 
-            Box(
+            SubcomposeAsyncImage(
+                model = recipe.imageUrl,
+                contentDescription = recipe.name,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Фото блюда",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+                contentScale = ContentScale.Crop,
+                loading = {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                    }
+                },
+                error = {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Restaurant,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            )
 
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 Row(

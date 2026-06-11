@@ -43,20 +43,34 @@ import androidx.navigation.NavController
 import com.example.recipeapp.data.sampleRecipes
 import com.example.recipeapp.ui.components.EditableListItem
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.recipeapp.data.Recipe
+import com.example.recipeapp.ui.viewmodel.RecipeViewModel
+import kotlinx.coroutines.launch
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditRecipeScreen(navController: NavController, recipeId: Int) {
-    val recipe = sampleRecipes.find { it.id == recipeId } ?: sampleRecipes.first()
+fun EditRecipeScreen(navController: NavController, recipeViewModel: RecipeViewModel, recipeId: Long) {
+    val recipeState by recipeViewModel.selectedRecipe.collectAsState()
+    val scope = rememberCoroutineScope()
 
-    var name by remember { mutableStateOf(recipe.name) }
-    var imageUrl by remember { mutableStateOf(recipe.imageUrl) }
-    var cookingTime by remember { mutableStateOf(recipe.cookingTimeMinutes.toString()) }
-    var calories by remember { mutableStateOf(recipe.calories.toString()) }
-    var proteins by remember { mutableStateOf("%.1f".format(recipe.proteins)) }
-    var fats by remember { mutableStateOf("%.1f".format(recipe.fats)) }
-    var carbohydrates by remember { mutableStateOf("%.1f".format(recipe.carbohydrates)) }
-    val ingredients = remember { mutableStateListOf(*recipe.ingredients.toTypedArray()) }
-    val steps = remember { mutableStateListOf(*recipe.steps.toTypedArray()) }
+    LaunchedEffect(recipeId) {
+        recipeViewModel.getRecipeById(recipeId)
+    }
+
+    val recipe = recipeState ?: return
+
+    var name by remember(recipe) { mutableStateOf(recipe.name) }
+    var imageUrl by remember(recipe) { mutableStateOf(recipe.imageUrl ?: "") }
+    var cookingTime by remember(recipe) { mutableStateOf(recipe.cookingTimeMinutes.toString()) }
+    var calories by remember(recipe) { mutableStateOf(recipe.calories.toString()) }
+    var proteins by remember(recipe) { mutableStateOf("%.1f".format(recipe.proteins)) }
+    var fats by remember(recipe) { mutableStateOf("%.1f".format(recipe.fats)) }
+    var carbohydrates by remember(recipe) { mutableStateOf("%.1f".format(recipe.carbohydrates)) }
+    val ingredients = remember(recipe) { mutableStateListOf(*recipe.ingredients.toTypedArray()) }
+    val steps = remember(recipe) { mutableStateListOf(*recipe.steps.toTypedArray()) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     if (showDeleteDialog) {
@@ -67,7 +81,11 @@ fun EditRecipeScreen(navController: NavController, recipeId: Int) {
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    navController.popBackStack()
+                    scope.launch {
+                        recipeViewModel.delete(recipe)
+                        navController.popBackStack()
+                        navController.popBackStack() // Go back to list
+                    }
                 }) {
                     Text("Удалить", color = MaterialTheme.colorScheme.error)
                 }
@@ -227,7 +245,23 @@ fun EditRecipeScreen(navController: NavController, recipeId: Int) {
                 ) {
                     Icon(Icons.Default.Delete, "Удалить рецепт")
                 }
-                FloatingActionButton(onClick = { navController.popBackStack() }) {
+                FloatingActionButton(onClick = {
+                    val updatedRecipe = recipe.copy(
+                        name = name,
+                        imageUrl = imageUrl.ifBlank { null },
+                        cookingTimeMinutes = cookingTime.toIntOrNull() ?: 0,
+                        calories = calories.toIntOrNull() ?: 0,
+                        proteins = proteins.toDoubleOrNull() ?: 0.0,
+                        fats = fats.toDoubleOrNull() ?: 0.0,
+                        carbohydrates = carbohydrates.toDoubleOrNull() ?: 0.0,
+                        ingredients = ingredients.filter { it.isNotBlank() },
+                        steps = steps.filter { it.isNotBlank() }
+                    )
+                    scope.launch {
+                        recipeViewModel.update(updatedRecipe)
+                        navController.popBackStack()
+                    }
+                }) {
                     Icon(Icons.Default.Save, "Сохранить")
                 }
             }

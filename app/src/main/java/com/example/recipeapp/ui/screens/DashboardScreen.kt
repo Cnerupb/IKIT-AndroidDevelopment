@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -68,14 +69,21 @@ import com.example.recipeapp.ui.navigation.Routes
 import com.example.recipeapp.ui.viewmodel.DashboardViewModel
 import com.example.recipeapp.ui.viewmodel.WeatherUiState
 
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.SubcomposeAsyncImage
+import androidx.compose.material.icons.filled.Restaurant
+import com.example.recipeapp.ui.viewmodel.RecipeViewModel
+
 @Composable
 fun DashboardScreen(
     navController: NavController,
     padding: PaddingValues,
-    viewModel: DashboardViewModel = viewModel()
+    viewModel: DashboardViewModel = viewModel(),
+    recipeViewModel: RecipeViewModel
 ) {
     val context = LocalContext.current
     val weatherState by viewModel.weatherState.collectAsState()
+    val recentRecipes by recipeViewModel.recentRecipes.collectAsState(initial = emptyList())
 
     var permissionGranted by remember {
         mutableStateOf(
@@ -137,7 +145,7 @@ fun DashboardScreen(
             }
         }
 
-        RecentRecipesSection(navController = navController)
+        RecentRecipesSection(navController = navController, recipes = recentRecipes)
     }
 }
 
@@ -305,7 +313,7 @@ private fun WeatherCardError(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun RecentRecipesSection(navController: NavController) {
+private fun RecentRecipesSection(navController: NavController, recipes: List<Recipe>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -323,15 +331,33 @@ private fun RecentRecipesSection(navController: NavController) {
             }
         }
 
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 2.dp)
-        ) {
-            items(sampleRecipes, key = { it.id }) { recipe ->
-                RecentRecipeCard(
-                    recipe = recipe,
-                    onClick = { navController.navigate(Routes.recipeDetail(recipe.id)) }
-                )
+        if (recipes.isEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        "Здесь будут ваши рецепты",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp)
+            ) {
+                items(recipes, key = { it.id }) { recipe ->
+                    RecentRecipeCard(
+                        recipe = recipe,
+                        onClick = { navController.navigate(Routes.recipeDetail(recipe.id.toInt())) }
+                    )
+                }
             }
         }
     }
@@ -345,19 +371,30 @@ private fun RecentRecipeCard(recipe: Recipe, onClick: () -> Unit) {
         onClick = onClick
     ) {
         Column {
-            Box(
+            SubcomposeAsyncImage(
+                model = recipe.imageUrl,
+                contentDescription = recipe.name,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(175.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Фото блюда",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+                contentScale = ContentScale.Crop,
+                loading = {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                },
+                error = {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Restaurant,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            )
             Column(
                 modifier = Modifier.padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
