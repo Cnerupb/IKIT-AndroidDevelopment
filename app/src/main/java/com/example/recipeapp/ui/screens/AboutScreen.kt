@@ -113,7 +113,7 @@ private fun OfficesCard() {
         }
     }
 
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, mapView) {
         val observer = object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 MapKitFactory.getInstance().onStart()
@@ -125,10 +125,6 @@ private fun OfficesCard() {
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-            MapKitFactory.getInstance().onStart()
-            mapView.onStart()
-        }
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }

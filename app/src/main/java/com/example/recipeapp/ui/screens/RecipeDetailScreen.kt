@@ -33,7 +33,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.recipeapp.data.sampleRecipes
 import com.example.recipeapp.ui.navigation.Routes
 
 import androidx.compose.runtime.LaunchedEffect

@@ -1,5 +1,6 @@
 package com.example.recipeapp.ui.screens
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.recipeapp.ui.components.EditableListItem
-
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.recipeapp.data.Recipe
 import com.example.recipeapp.ui.viewmodel.RecipeViewModel
@@ -48,6 +51,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateRecipeScreen(navController: NavController, recipeViewModel: RecipeViewModel) {
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     var name by remember { mutableStateOf("") }
     var imageUrl by remember { mutableStateOf("") }
     var cookingTime by remember { mutableStateOf("") }
@@ -74,6 +78,11 @@ fun CreateRecipeScreen(navController: NavController, recipeViewModel: RecipeView
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -87,7 +96,12 @@ fun CreateRecipeScreen(navController: NavController, recipeViewModel: RecipeView
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Название") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        capitalization = KeyboardCapitalization.Sentences,
+                        autoCorrectEnabled = true
+                    )
                 )
                 OutlinedTextField(
                     value = imageUrl,
