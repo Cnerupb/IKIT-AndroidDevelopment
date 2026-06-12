@@ -1,38 +1,60 @@
 package com.example.recipeapp.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Color as AndroidColor
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.recipeapp.R
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.mapview.MapView
+import com.yandex.runtime.image.ImageProvider
+
+data class Office(val name: String, val point: Point)
 
 // Поглощает остаточный скролл, не давая overscroll-эффекту срабатывать
 private val NoOverscroll = object : NestedScrollConnection {
@@ -52,7 +74,6 @@ fun AboutScreen(padding: PaddingValues) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // fill = false: занимает не более оставшегося места, карта всегда видна снизу.
         Column(
             modifier = Modifier
                 .weight(1f, fill = false)
@@ -62,7 +83,6 @@ fun AboutScreen(padding: PaddingValues) {
             AboutCompanyCard()
         }
 
-        // Карта находится вне scrollable-контейнера — жесты ей принадлежат целиком.
         OfficesCard()
     }
 }
@@ -101,15 +121,55 @@ private fun AboutCompanyCard() {
 private fun OfficesCard() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val officePoint = remember { Point(53.9, 27.56) }
+    
+    val offices = remember {
+        listOf(
+            Office("Главный офис (Минск)", Point(53.9022, 27.5619)),
+            Office("Филиал Центр", Point(53.9100, 27.5800)),
+            Office("IT-департамент", Point(53.9200, 27.6000))
+        )
+    }
+
+    // Создаем черную метку программно
+    val blackMarkerProvider = remember {
+        val size = 60
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint().apply {
+            color = AndroidColor.BLACK
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        // Рисуем основной черный круг
+        canvas.drawCircle(size / 2f, size / 2f, size / 2.5f, paint)
+        
+        // Рисуем белую обводку для контраста
+        paint.color = AndroidColor.WHITE
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 4f
+        canvas.drawCircle(size / 2f, size / 2f, size / 2.5f, paint)
+        
+        ImageProvider.fromBitmap(bitmap)
+    }
 
     val mapView = remember {
         MapView(context).apply {
             val map = mapWindow.map
-            map.move(CameraPosition(officePoint, 13f, 0f, 0f))
-            map.mapObjects.addPlacemark().apply {
-                geometry = officePoint
+
+            offices.forEach { office ->
+                map.mapObjects.addPlacemark().apply {
+                    geometry = office.point
+                    setIcon(blackMarkerProvider)
+                    userData = office.name
+                    addTapListener { mapObject, _ ->
+                        val name = mapObject.userData as? String ?: ""
+                        Toast.makeText(context, name, Toast.LENGTH_SHORT).show()
+                        true
+                    }
+                }
             }
+
+            map.move(CameraPosition(offices[0].point, 13f, 0f, 0f))
         }
     }
 
@@ -142,13 +202,54 @@ private fun OfficesCard() {
                 text = "Наши офисы",
                 style = MaterialTheme.typography.titleMedium
             )
-            AndroidView(
-                factory = { mapView },
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .height(300.dp)
                     .clip(RoundedCornerShape(12.dp))
-            )
+            ) {
+                AndroidView(
+                    factory = { mapView },
+                    modifier = Modifier.fillMaxSize()
+                )
+                
+                // Кнопки масштабирования
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    IconButton(
+                        onClick = {
+                            val pos = mapView.mapWindow.map.cameraPosition
+                            mapView.mapWindow.map.move(
+                                CameraPosition(pos.target, pos.zoom + 1, pos.azimuth, pos.tilt)
+                            )
+                        },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                        )
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Zoom In")
+                    }
+                    IconButton(
+                        onClick = {
+                            val pos = mapView.mapWindow.map.cameraPosition
+                            mapView.mapWindow.map.move(
+                                CameraPosition(pos.target, pos.zoom - 1, pos.azimuth, pos.tilt)
+                            )
+                        },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                        )
+                    ) {
+                        Text("-", style = MaterialTheme.typography.headlineMedium)
+                    }
+                }
+            }
         }
     }
 }
