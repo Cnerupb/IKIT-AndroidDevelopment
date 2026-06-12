@@ -54,6 +54,7 @@ import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.IconStyle
+import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
 import androidx.core.graphics.createBitmap
@@ -129,14 +130,14 @@ private fun OfficesCard() {
     val offices = remember {
         listOf(
             Office("Главный офис (Минск)", Point(53.9022, 27.5619)),
-            Office("Филиал Центр", Point(53.9100, 27.5800)),
+            Office("Филиал в центре", Point(53.9100, 27.5800)),
             Office("IT-департамент", Point(53.9200, 27.6000))
         )
     }
 
     // Создаем Material-точку (красный круг с белой обводкой)
     val dotMarkerProvider = remember {
-        val size = 100 // Увеличили размер для удобства нажатия
+        val size = 60 // Еще чуть крупнее для надежности
         val bitmap = createBitmap(size, size)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -145,32 +146,38 @@ private fun OfficesCard() {
         paint.color = AndroidColor.argb(70, 0, 0, 0)
         canvas.drawCircle(size / 2f, size / 2f + 4f, size / 2.2f, paint)
 
-        // 2. Основной красный круг (Material Red)
+        // 2. Основной красный круг
         paint.color = "#F44336".toColorInt()
         paint.style = Paint.Style.FILL
-        canvas.drawCircle(size / 2f, size / 2f, size / 2.6f, paint)
+        canvas.drawCircle(size / 2f, size / 2f, size / 3f, paint)
 
         // 3. Белая обводка (делает точку четкой)
         paint.color = AndroidColor.WHITE
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 6f
-        canvas.drawCircle(size / 2f, size / 2f, size / 2.6f, paint)
+        paint.strokeWidth = 8f
+        canvas.drawCircle(size / 2f, size / 2f, size / 3f, paint)
 
         ImageProvider.fromBitmap(bitmap)
+    }
+
+    // ВАЖНО: Сохраняем слушатель в remember, чтобы Garbage Collector его не удалил!
+    val mapTapListener = remember {
+        MapObjectTapListener { mapObject, _ ->
+            val officeName = mapObject.userData as? String
+            println("MapClick: Нажато на объект: $officeName") // Лог для проверки в LogCat
+            if (officeName != null) {
+                Toast.makeText(context, officeName, Toast.LENGTH_SHORT).show()
+            }
+            true // Событие обработано
+        }
     }
 
     val mapView = remember {
         MapView(context).apply {
             val map = mapWindow.map
 
-            // Устанавливаем общий слушатель кликов на все объекты карты
-            map.mapObjects.addTapListener { mapObject, _ ->
-                val officeName = mapObject.userData as? String
-                if (officeName != null) {
-                    Toast.makeText(context.applicationContext, officeName, Toast.LENGTH_SHORT).show()
-                }
-                true // Событие обработано
-            }
+            // Регистрируем сохраненный слушатель (обязательно по сильной ссылке)
+            map.mapObjects.addTapListener(mapTapListener)
 
             // Наносим метки
             offices.forEach { office ->
