@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.PointF
 import android.graphics.Color as AndroidColor
+import androidx.core.graphics.toColorInt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,8 +53,10 @@ import com.example.recipeapp.R
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.map.IconStyle
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
+import androidx.core.graphics.createBitmap
 
 data class Office(val name: String, val point: Point)
 
@@ -130,25 +134,28 @@ private fun OfficesCard() {
         )
     }
 
-    // Создаем черную метку программно
-    val blackMarkerProvider = remember {
-        val size = 60
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    // Создаем Material-точку (красный круг с белой обводкой)
+    val dotMarkerProvider = remember {
+        val size = 100 // Увеличили размер для удобства нажатия
+        val bitmap = createBitmap(size, size)
         val canvas = Canvas(bitmap)
-        val paint = Paint().apply {
-            color = AndroidColor.BLACK
-            style = Paint.Style.FILL
-            isAntiAlias = true
-        }
-        // Рисуем основной черный круг
-        canvas.drawCircle(size / 2f, size / 2f, size / 2.5f, paint)
-        
-        // Рисуем белую обводку для контраста
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        // 1. Мягкая тень под точкой
+        paint.color = AndroidColor.argb(70, 0, 0, 0)
+        canvas.drawCircle(size / 2f, size / 2f + 4f, size / 2.2f, paint)
+
+        // 2. Основной красный круг (Material Red)
+        paint.color = "#F44336".toColorInt()
+        paint.style = Paint.Style.FILL
+        canvas.drawCircle(size / 2f, size / 2f, size / 2.6f, paint)
+
+        // 3. Белая обводка (делает точку четкой)
         paint.color = AndroidColor.WHITE
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 4f
-        canvas.drawCircle(size / 2f, size / 2f, size / 2.5f, paint)
-        
+        paint.strokeWidth = 6f
+        canvas.drawCircle(size / 2f, size / 2f, size / 2.6f, paint)
+
         ImageProvider.fromBitmap(bitmap)
     }
 
@@ -156,20 +163,32 @@ private fun OfficesCard() {
         MapView(context).apply {
             val map = mapWindow.map
 
+            // Устанавливаем общий слушатель кликов на все объекты карты
+            map.mapObjects.addTapListener { mapObject, _ ->
+                val officeName = mapObject.userData as? String
+                if (officeName != null) {
+                    Toast.makeText(context.applicationContext, officeName, Toast.LENGTH_SHORT).show()
+                }
+                true // Событие обработано
+            }
+
+            // Наносим метки
             offices.forEach { office ->
                 map.mapObjects.addPlacemark().apply {
                     geometry = office.point
-                    setIcon(blackMarkerProvider)
+                    setIcon(
+                        dotMarkerProvider, 
+                        IconStyle().apply { 
+                            anchor = PointF(0.5f, 0.5f)
+                            scale = 1.0f 
+                        }
+                    )
                     userData = office.name
-                    addTapListener { mapObject, _ ->
-                        val name = mapObject.userData as? String ?: ""
-                        Toast.makeText(context, name, Toast.LENGTH_SHORT).show()
-                        true
-                    }
                 }
             }
 
-            map.move(CameraPosition(offices[0].point, 13f, 0f, 0f))
+            // Перемещаем камеру на метку
+            map.move(CameraPosition(offices[0].point, 13.5f, 0f, 0f))
         }
     }
 
